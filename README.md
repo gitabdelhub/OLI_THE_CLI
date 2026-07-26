@@ -11,6 +11,14 @@ by Abdallah_LE
 
 A funny CLI for debugging, asking about what a command does, or just talking.
 
+## The story
+
+I was preparing for my internship interviews, spending hours reading documentation and getting stuck on cryptic error messages. Every time Python threw a `NameError` or a `FileNotFoundError`, I'd copy-paste it to Google or ChatGPT, context-switch, lose my flow, and feel stupid for not understanding.
+
+So I built OLI. A terminal buddy that stays in your terminal, translates errors into plain language, and never makes you feel dumb.
+
+No copy-paste. No browser. Just you, your terminal, and a buddy who explains.
+
 ## Get Started
 
 1. **Get a free API key** from [Groq](https://console.groq.com), OpenAI, or any provider you like
