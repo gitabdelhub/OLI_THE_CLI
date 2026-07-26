@@ -19,9 +19,17 @@ So I built OLI. A terminal buddy that stays in your terminal, translates errors 
 
 No copy-paste. No browser. Just you, your terminal, and a buddy who explains.
 
+## Installation
+
+```bash
+pip install git+https://github.com/gitabdelhub/oli-cli.git
+```
+
+Then open a terminal and type `oli` to start.
+
 ## Get Started
 
-1. **Get a free API key** from [Groq](https://console.groq.com), OpenAI, or any provider you like
+1. **Get a free API key** from [Groq](https://console.groq.com) (2 minutes)
 2. **Link it**: `oli configure YOUR_API_KEY`
 3. Keep using your terminal. If a command fails, call your buddy:
 
