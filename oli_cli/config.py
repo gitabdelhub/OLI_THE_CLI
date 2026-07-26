@@ -9,8 +9,7 @@ LAST_ERROR_FILE = OLI_DIR / "last_error.json"
 HISTORY_FILE = OLI_DIR / "history.json"
 
 
-def """Create .oli directory if it doesn't exist."""
-    _ensure_dir():
+def _ensure_dir():
     OLI_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -73,8 +72,7 @@ def load_history():
 SESSION_FILE = OLI_DIR / "session"
 
 
-def """Check if last oli command was >30s ago (for banner display)."""
-    is_new_session() -> bool:
+def is_new_session() -> bool:
     import time
     now = time.time()
     if SESSION_FILE.exists():
