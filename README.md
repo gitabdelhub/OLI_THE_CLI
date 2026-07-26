@@ -43,19 +43,13 @@ Done. No copy-paste, no browser. Your error, explained in plain English.
 | `oli run <file>` | Run a file and catch errors |
 | `oli configure KEY` | Set your API key |
 
-## Any API works
+## API Key
 
-OLI works with **any** OpenAI-compatible provider:
+Get a **free** one from [Groq](https://console.groq.com) (2 minutes).
+Other providers work too — check their docs for the URL and model name.
 
 ```bash
-# Groq (free, default)
-oli configure gsk_...
-
-# OpenAI
-oli configure sk-... --url https://api.openai.com/v1/chat/completions --model gpt-4o-mini
-
-# Whatever you want
-oli configure your_key --url https://your-provider.com/v1 --model your-model
+oli configure YOUR_API_KEY
 ```
 
 ## How it works
