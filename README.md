@@ -1,29 +1,43 @@
+```
+  ___  _     ___ 
+ / _ \| |   |_ _|
+| | | | |    | | 
+| |_| | |___ | | 
+ \___/|_____|___|
+by Abdallah_LE
+```
+
 # OLI — Your Terminal Buddy
 
-OLI catches your errors and explains them in plain English. No more copy-pasting to ChatGPT.
+A funny CLI for debugging, asking about what a command does, or just talking.
 
-## Quick Start
+## Get Started
+
+1. **Get a free API key** from [Groq](https://console.groq.com), OpenAI, or any provider you like
+2. **Link it**: `oli configure YOUR_API_KEY`
+3. Keep using your terminal. If a command fails, call your buddy:
 
 ```bash
-pip install oli-cli
-oli configure YOUR_API_KEY
-# Run any command that fails, then:
 oli
 ```
 
-## Usage
+Done. No copy-paste, no browser. Your error, explained in plain English.
+
+## Commands
 
 | Command | What it does |
 |---------|-------------|
-| `oli` | Detect last command, explain if error |
-| `oli explain [N]` | Explain with N lines of detail |
-| `oli run <file>` | Run a file and capture errors |
+| `oli` | Detect your last command, explain if it failed |
+| `oli explain [N]` | More details (N = number of lines) |
+| `oli whatis <cmd>` | Explain a command before you run it |
+| `oli ask <question>` | Ask anything to OLI |
+| `oli chat` | Just talk — interactive mode |
+| `oli run <file>` | Run a file and catch errors |
 | `oli configure KEY` | Set your API key |
-| `oli historique` | Show recent error history |
 
-## API Providers
+## Any API works
 
-OLI works with any OpenAI-compatible API:
+OLI works with **any** OpenAI-compatible provider:
 
 ```bash
 # Groq (free, default)
@@ -31,15 +45,18 @@ oli configure gsk_...
 
 # OpenAI
 oli configure sk-... --url https://api.openai.com/v1/chat/completions --model gpt-4o-mini
+
+# Whatever you want
+oli configure your_key --url https://your-provider.com/v1 --model your-model
 ```
 
 ## How it works
 
 1. You run a command → it fails
-2. You type `oli` → OLI re-runs it quietly, captures the error
-3. OLI sends it to an LLM → explains in 3 sentences
-4. Type `oli explain 8` for more detail
+2. You type `oli` → OLI catches it, re-runs it, captures the error
+3. Sends it to your LLM → you get a clear explanation
+4. Not enough? `oli explain 8`
 
 ## License
 
-MIT
+MIT — do whatever.
