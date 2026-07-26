@@ -1,5 +1,6 @@
 import typer
 import subprocess
+from pathlib import Path
 from rich.console import Console
 
 from . import config
@@ -20,6 +21,7 @@ console = Console()
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
+    """Main entry point - show banner or detect last error."""
     if config.is_new_session():
         console.print(BANNER, style="bold cyan")
 
@@ -39,10 +41,44 @@ def main(ctx: typer.Context):
         _detect_and_explain()
 
 
+LANG_MAP = {
+    ".py": ["python"],
+    ".js": ["node"],
+    ".ts": ["npx", "ts-node"],
+    ".go": ["go", "run"],
+    ".rb": ["ruby"],
+    ".sh": ["bash"],
+    ".php": ["php"],
+    ".rs": ["rustc"],
+    ".java": ["javac"],
+}
+
+
+def _detect_lang(fichier: str) -> list[str] | None:
+    ext = Path(fichier).suffix
+    cmd = LANG_MAP.get(ext)
+    if cmd:
+        if ext in (".py", ".js", ".rb", ".sh", ".php"):
+            return [*cmd, fichier]
+        if ext == ".ts":
+            return [*cmd, fichier]
+        if ext == ".go":
+            return [*cmd, fichier]
+        if ext == ".rs":
+            return [*cmd, fichier]
+    return None
+
+
 @app.command()
 def run(fichier: str):
     """Run a file and capture errors."""
-    result = subprocess.run(["python", fichier], capture_output=True, text=True)
+    lang_cmd = _detect_lang(fichier)
+    if lang_cmd is None:
+        console.print(f"[yellow]Unsupported file: {fichier}[/]")
+        console.print("Supported: .py .js .ts .go .rb .sh .php .rs .java")
+        return
+
+    result = subprocess.run(lang_cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
         console.print(result.stdout, end="")
@@ -50,7 +86,7 @@ def run(fichier: str):
     else:
         console.print(result.stderr, style="red", end="")
         config.save_last_error({
-            "commande": f"python {fichier}",
+            "commande": " ".join(lang_cmd),
             "stderr": result.stderr,
             "stdout": result.stdout,
         })
@@ -183,6 +219,7 @@ def _detect_and_explain():
 
 
 def get_last_shell_command() -> str | None:
+    """Get last command from shell history (PowerShell or bash)."""
     import sys
     try:
         if sys.platform == "win32":
@@ -204,6 +241,7 @@ def get_last_shell_command() -> str | None:
 
 
 def _re_run(command: str) -> subprocess.CompletedProcess | None:
+    """Re-run command with 15s timeout, return None if timeout."""
     try:
         return subprocess.run(
             command, capture_output=True, text=True, shell=True, timeout=15,

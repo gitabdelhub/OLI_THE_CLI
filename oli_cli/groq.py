@@ -29,6 +29,7 @@ def _ask(messages: list[dict], max_tokens: int = 500) -> str:
 
 
 def expliquer_erreur(stderr: str, commande: str, max_lignes: int = 3) -> str:
+    """Explain error in max_lignes sentences using LLM."""
     prompt = f"""Command: {commande}
 Error:
 ```
