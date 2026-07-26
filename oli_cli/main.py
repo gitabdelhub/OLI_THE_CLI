@@ -31,12 +31,9 @@ def main(ctx: typer.Context):
             console.print("[bold]Welcome to OLI — your terminal buddy.[/]")
             typer.echo("")
             console.print("1. Get a free API key ([bold cyan]Groq[/], OpenAI, etc.)")
-            console.print("2. Link it by typing: [bold]oli configure YOUR_API_KEY[/]")
-            console.print("3. Keep using your terminal. If a command fails, call your buddy: [bold]oli[/]")
-            console.print("4. Ask for more: [bold]oli explain 5[/]")
-            console.print("5. Ask anything: [bold]oli ask your question[/]")
-            console.print("6. What does a command do? [bold]oli whatis docker compose up[/]")
-            console.print("7. Chat mode: [bold]oli chat[/]")
+            console.print("2. Link it: [bold]oli configure YOUR_API_KEY[/]")
+            console.print("3. If a command fails, call your buddy: [bold]oli[/]")
+            console.print("4. See all commands: [bold]oli more[/]")
             return
         _detect_and_explain()
 
@@ -182,6 +179,21 @@ def historique():
     for i, entry in enumerate(entries[-5:], 1):
         console.print(f"\n[bold cyan]--- Error {i} ---[/]")
         console.print(entry[:300])
+
+
+@app.command()
+def more():
+    """Show all OLI commands."""
+    console.print("[bold]Available commands:[/]")
+    console.print("  [bold]oli[/]            → Detect last error and explain")
+    console.print("  [bold]oli run <file>[/] → Run a file (.py .js .ts .go .rb .sh .php)")
+    console.print("  [bold]oli explain [N][/] → More details (N = lines)")
+    console.print("  [bold]oli whatis <cmd>[/] → Explain a command before running")
+    console.print("  [bold]oli ask <question>[/] → Ask anything")
+    console.print("  [bold]oli chat[/]        → Chat mode")
+    console.print("  [bold]oli configure KEY[/] → Set your API key")
+    console.print("  [bold]oli historique[/]  → Show error history")
+    console.print("  [bold]oli more[/]        → Show this list")
 
 
 def _detect_and_explain():
