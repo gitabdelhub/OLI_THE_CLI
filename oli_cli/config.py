@@ -65,3 +65,20 @@ def load_history():
     if HISTORY_FILE.exists():
         return json.loads(HISTORY_FILE.read_text())
     return []
+
+
+SESSION_FILE = OLI_DIR / "session"
+
+
+def is_new_session() -> bool:
+    import time
+    now = time.time()
+    if SESSION_FILE.exists():
+        try:
+            last = float(SESSION_FILE.read_text().strip())
+            if now - last < 30:
+                return False
+        except Exception:
+            pass
+    SESSION_FILE.write_text(str(now))
+    return True

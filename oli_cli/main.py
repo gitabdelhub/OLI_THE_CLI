@@ -1,9 +1,9 @@
 import typer
 import subprocess
 from rich.console import Console
+
 from . import config
 from . import groq
-from . import shell
 
 BANNER = r"""
   ___  _     ___ 
@@ -16,24 +16,25 @@ by Abdallah_LE
 
 app = typer.Typer()
 console = Console()
-_FIRST_RUN_FLAG = False
 
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
-    global _FIRST_RUN_FLAG
-    api_key = config.get_api_key()
+    if config.is_new_session():
+        console.print(BANNER, style="bold cyan")
 
     if ctx.invoked_subcommand is None:
-        if not api_key or not config.CONFIG_FILE.exists():
-            console.print(BANNER, style="bold cyan")
+        if not config.get_api_key() or not config.CONFIG_FILE.exists():
             typer.echo("")
             console.print("[bold]Welcome to OLI — your terminal buddy.[/]")
             typer.echo("")
             console.print("1. Get a free API key ([bold cyan]Groq[/], OpenAI, etc.)")
             console.print("2. Link it by typing: [bold]oli configure YOUR_API_KEY[/]")
             console.print("3. Keep using your terminal. If a command fails, call your buddy: [bold]oli[/]")
-            console.print("4. Ask for more: [bold]oli explain 5[/] (5 = number of lines you want)")
+            console.print("4. Ask for more: [bold]oli explain 5[/]")
+            console.print("5. Ask anything: [bold]oli ask your question[/]")
+            console.print("6. What does a command do? [bold]oli whatis docker compose up[/]")
+            console.print("7. Chat mode: [bold]oli chat[/]")
             return
         _detect_and_explain()
 
@@ -45,7 +46,7 @@ def run(fichier: str):
 
     if result.returncode == 0:
         console.print(result.stdout, end="")
-        console.print("[bold green]✅ Done (no errors)[/]")
+        console.print("[bold green]Done (no errors)[/]")
     else:
         console.print(result.stderr, style="red", end="")
         config.save_last_error({
@@ -54,32 +55,69 @@ def run(fichier: str):
             "stdout": result.stdout,
         })
         config.save_to_history(result.stderr)
-        console.print("\n[bold yellow]💡 Type 'oli' to understand the error[/]")
+        console.print("\n[bold yellow]Type 'oli' to understand the error[/]")
 
 
 @app.command()
-def explain(n: int = typer.Argument(3, help="Number of lines of explanation")):
-    """Explain the last error. Add a number for more detail."""
+def explain(n: int = typer.Argument(3, help="Number of lines")):
+    """Explain the last error."""
     erreur = config.load_last_error()
-    api_key = config.get_api_key()
-
     if not erreur:
         console.print("[bold red]No error saved yet.[/]")
         return
-
-    if not api_key:
+    if not config.get_api_key():
         console.print("[bold red]Set your API key: oli configure[/]")
         return
 
-    console.print("[bold blue]🤔 Analysing...[/]")
-    reponse = groq.expliquer_erreur(
-        stderr=erreur["stderr"],
-        commande=erreur["commande"],
-        api_key=api_key,
-        max_lignes=n,
-    )
+    console.print("[bold blue]Analysing...[/]")
+    reponse = groq.expliquer_erreur(erreur["stderr"], erreur["commande"], max_lignes=n)
     console.print(reponse)
-    console.print(f"\n[dim]More details: oli explain {n + 5}[/]")
+    console.print(f"\n[dim]More: oli explain {n + 5}[/]")
+
+
+@app.command()
+def whatis(commande: str = typer.Argument(..., help="Command to explain")):
+    """Explain what a command does before running it."""
+    if not config.get_api_key():
+        console.print("[bold red]Set your API key: oli configure[/]")
+        return
+
+    console.print(f"[bold blue]What is [bold]{commande}[/]?[/]")
+    reponse = groq.expliquer_commande(commande)
+    console.print(reponse)
+
+
+@app.command()
+def ask(question: str = typer.Argument(..., help="Your question")):
+    """Ask anything to OLI."""
+    if not config.get_api_key():
+        console.print("[bold red]Set your API key: oli configure[/]")
+        return
+
+    console.print("[bold blue]Thinking...[/]")
+    reponse = groq.ask_question(question)
+    console.print(reponse)
+
+
+@app.command()
+def chat():
+    """Start an interactive chat with OLI."""
+    if not config.get_api_key():
+        console.print("[bold red]Set your API key: oli configure[/]")
+        return
+
+    console.print("[bold cyan]Chat mode — type 'exit' to stop[/]")
+    history = [{"role": "system", "content": "You are OLI, a terminal buddy. Be concise and helpful."}]
+
+    while True:
+        user_input = typer.prompt("You")
+        if user_input.lower() in ("exit", "quit"):
+            break
+
+        history.append({"role": "user", "content": user_input})
+        reponse = groq._ask(history)
+        console.print(f"[bold cyan]OLI[/] {reponse}")
+        history.append({"role": "assistant", "content": reponse})
 
 
 @app.command()
@@ -93,7 +131,7 @@ def configure(
         console.print("Get a free key from [bold cyan]https://console.groq.com[/]")
         api_key = typer.prompt("Paste your key here")
     config.save_config({"api_key": api_key, "api_url": api_url, "model": model})
-    console.print("[bold green]✅ OLI is now smart ![/]")
+    console.print("[bold green]OLI is now smart ![/]")
     console.print("Run a command that fails, then type [bold]oli[/]")
 
 
@@ -111,7 +149,7 @@ def historique():
 
 
 def _detect_and_explain():
-    cmd = shell.get_last_command()
+    cmd = get_last_shell_command()
 
     if not cmd:
         console.print("[yellow]No command found in history.[/]")
@@ -120,13 +158,13 @@ def _detect_and_explain():
 
     console.print(f"Last command: [bold]{cmd}[/]")
 
-    result = shell.re_run(cmd)
+    result = _re_run(cmd)
     if result is None:
-        console.print("[yellow]Command timed out. Try a faster command.[/]")
+        console.print("[yellow]Command timed out.[/]")
         return
     if result.returncode == 0:
         console.print(result.stdout, end="")
-        console.print("[bold green]✅ No error[/]")
+        console.print("[bold green]No error[/]")
         return
 
     console.print(result.stderr, style="red", end="")
@@ -137,15 +175,41 @@ def _detect_and_explain():
     })
     config.save_to_history(result.stderr)
 
-    api_key = config.get_api_key()
-    if api_key:
-        console.print("\n[bold blue]🤔 Translating error...[/]")
-        reponse = groq.expliquer_erreur(
-            stderr=result.stderr, commande=cmd,
-            api_key=api_key, max_lignes=3,
-        )
+    if config.get_api_key():
+        console.print("\n[bold blue]Translating error...[/]")
+        reponse = groq.expliquer_erreur(result.stderr, cmd, max_lignes=3)
         console.print(reponse)
-        console.print(f"\n[dim]Need more details? → [bold]oli explain 8[/]")
+        console.print("[dim]More: [bold]oli explain 8[/]")
+
+
+def get_last_shell_command() -> str | None:
+    import sys
+    try:
+        if sys.platform == "win32":
+            r = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "Get-Content (Get-PSReadlineOption).HistorySavePath "
+                 "| Where-Object { $_ -notmatch '^oli\\b' } "
+                 "| Select-Object -Last 1"],
+                capture_output=True, text=True, timeout=5,
+            )
+        else:
+            r = subprocess.run(
+                ["bash", "-c", "history | tail -1 | sed 's/^ *[0-9]* *//'"],
+                capture_output=True, text=True, timeout=5,
+            )
+        return r.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def _re_run(command: str) -> subprocess.CompletedProcess | None:
+    try:
+        return subprocess.run(
+            command, capture_output=True, text=True, shell=True, timeout=15,
+        )
+    except subprocess.TimeoutExpired:
+        return None
 
 
 if __name__ == "__main__":
